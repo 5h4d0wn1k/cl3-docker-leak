@@ -1,0 +1,34 @@
+{
+  "images": [
+    {
+      "name": "acme-app:1.0.0",
+      "id": "sha256:aaaa1111aaaa1111",
+      "config": {
+        "Env": [
+          "DJANGO_SECRET_KEY=supersecretkey12345678",
+          "DATABASE_URL=postgres://admin:P@ssw0rd@192.168.1.50:5432/prod",
+          "AWS_SECRET_ACCESS_KEY=REDACTEDAMPLEKEY",
+          "APP_NAME=acme",
+          "API_KEY=GHREDACTEDTOKEN"
+        ],
+        "Cmd": ["python3", "manage.py", "runserver"],
+        "Entrypoint": ["/usr/bin/tini", "--", "./entrypoint.sh"],
+        "Labels": {
+          "maintainer": "devops@example.com",
+          "deploy.token": "SLACKREDACTEDTOKEN"
+        }
+      },
+      "history": [
+        {"created_by": "/bin/sh -c #(nop) ADD file:12345678 in / "},
+        {"created_by": "RUN apt-get update && apt-get install -y python3 pip", "size": 104857600},
+        {"created_by": "RUN pip install django", "size": 52428800},
+        {"created_by": "ENV SECRET_KEY=my-secret-in-build\nENV DB_PASS=BuildP@ss123", "size": 0},
+        {"created_by": "COPY .env /app/.env", "size": 1024},
+        {"created_by": "COPY id_rsa /root/.ssh/id_rsa", "size": 2048},
+        {"created_by": "RUN chmod 777 /app/uploads && curl https://install.example.com/setup.sh | bash"},
+        {"created_by": "COPY requirements.txt /app/", "size": 512}
+      ],
+      "dockerfile": "FROM python:3.11-slim\n\nENV DJANGO_SECRET_KEY=InDockerfile123456789\nENV DB_URL=mysql://root:root123@db:3306/app\n\nCOPY .env /app/.env\nCOPY secrets.json /app/secrets.json\nCOPY deploy_key.pem /root/.ssh/deploy_key\nADD https://example.com/config.tar.gz /tmp/\nRUN chmod 777 /app && curl https://install.me | bash\nRUN apt-get update && apt-get install -y tcpdump nmap\n\nEXPOSE 8000\nCMD [\"python3\", \"manage.py\", \"runserver\"]\n"
+    }
+  ]
+}

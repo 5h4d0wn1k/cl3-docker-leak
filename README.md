@@ -31,43 +31,47 @@ Requires Docker daemon running locally.
 ## Usage
 
 ```bash
-# Scan a specific image
-python3 docker_leak.py nginx:latest
+# Offline demo (no Docker daemon) — audit bundled fixtures
+python3 docker_leak.py --demo
 
-# Scan multiple images
-python3 docker_leak.py nginx:latest python:3.11 redis:alpine
+# Audit a custom image-metadata/Dockerfile fixtures file (offline)
+python3 docker_leak.py --fixtures fixtures/docker-images.json
 
-# Scan all local images
+# Offline audit with JSON report + CI exit code
+python3 docker_leak.py --demo --output reports/cl3-report.json --exit-code-on-findings
+
+# Live (authorized, your own images, requires Docker daemon running):
+python3 docker_leak.py nginx:latest python:3.11
 python3 docker_leak.py --all-local
-
-# List local images
-python3 docker_leak.py --list-images
-
-# Save results to JSON
-python3 docker_leak.py nginx:latest --output results.json
 ```
 
-## Example Output
+## Exit Codes
 
-```
-  Scanning Docker Image: nginx:latest
-============================================================
-  ID:              sha256:abc123...
-  Created:         2024-01-15T10:30:00
-  OS/Arch:         linux/amd64
-  Size:            187.3 MB
-  Env Vars:        3 total, 1 sensitive
-    ⚠  API_KEY = a3f8****
-  Config Secrets:  0
-  Layers:          12
-  Layer Secrets:   1
-    Layer 5: 1 findings
-  Risk Score:      10/100 (LOW)
-```
+- `0` — completed cleanly (or demo finished without explicit CRITICAL/HIGH gate)
+- `1` — error (missing fixtures, unreadable file, bad JSON)
+- `2` — CRITICAL/HIGH findings present with `--exit-code-on-findings`
+
+## Live Lab Test Plan
+
+Runs entirely offline against `fixtures/docker-images.json` — no Docker daemon, no image pulls.
+
+1. **Demo**: `python3 docker_leak.py --demo` — expect CRITICAL/HIGH/MEDIUM findings for embedded ENV secrets, COPY of `.env`/`id_rsa`, chmod 777, curl-pipe-sh, Dockerfile ENV secrets, and sensitive labels. Exit `0`.
+2. **JSON report**: `python3 docker_leak.py --demo --output reports/cl3-report.json` — verify report has `finding_count > 0`, a `summary` map, and per-finding `severity`, `rule_id`, `message`, `remediation`.
+3. **CI exit code**: `python3 docker_leak.py --demo --exit-code-on-findings; echo $?` — expect `2`.
+4. **Unit tests**: `python3 -m unittest discover -s tests -v` — all pass (exercises regex patterns, dockerfile rule engine, fixture rule set, sensitive-file detection).
+5. **Live (optional)**: pass image names at runtime with Docker daemon running. Only test images you own or are authorized to scan.
+
+## Metrics
+
+- Detection rules exercised offline (real code paths): 15 regex secret patterns from `DockerSecretScanner.SECRET_PATTERNS`; 6 dangerous-instruction rules (WORLD_WRITABLE, PIPE_TO_SHELL, PRIVILEGED, REMOTE_ADD, USER_ADD, UNNECESSARY_TOOLS); sensitive COPY detection for `.env`/`id_rsa`/`credentials`/`*.pem`/`*.key`; ENV secret embedding in config and Dockerfile.
+- Every finding carries `severity`, `category`, `rule_id`, `image`, `message`, and a `remediation` string.
+- Config/env/label/entrypoint scanning reuses the live scanner's regex engine (`scan_text`/`scan_layer_command`); the offline Dockerfile parser runs the same regex patterns against parsed instructions.
+- Exit-code contract: `0` clean / `1` error / `2` findings (with `--exit-code-on-findings`).
+- Zero third-party dependencies; `--demo` requires no Docker daemon or network of any kind.
 
 ## Legal Disclaimer
 
-**IMPORTANT: Read before use.**
+## IMPORTANT: Read before use.
 
 This project is provided for **educational and authorized security testing purposes only**.
 
