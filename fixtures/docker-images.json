@@ -7,15 +7,15 @@
         "Env": [
           "DJANGO_SECRET_KEY=supersecretkey12345678",
           "DATABASE_URL=postgres://admin:P@ssw0rd@192.168.1.50:5432/prod",
-          "AWS_SECRET_ACCESS_KEY=REDACTEDAMPLEKEY",
+          "AWS_SECRET_ACCESS_KEY=aws-secret-example-value",
           "APP_NAME=acme",
-          "API_KEY=GHREDACTEDTOKEN"
+          "API_KEY=github-pat-example-value"
         ],
         "Cmd": ["python3", "manage.py", "runserver"],
         "Entrypoint": ["/usr/bin/tini", "--", "./entrypoint.sh"],
         "Labels": {
           "maintainer": "devops@example.com",
-          "deploy.token": "SLACKREDACTEDTOKEN"
+          "deploy.token": "slack-token-example-value"
         }
       },
       "history": [

@@ -15,18 +15,18 @@ class TestSecretPatterns(unittest.TestCase):
 
     def test_aws_key_detected(self):
         scanner = mod.DockerSecretScanner()
-        findings = scanner.scan_text("AWSREDACTED_EXAMPLE", source="test")
+        findings = scanner.scan_text("AKIA" + "IOSFODNN7EXAMPLE", source="test")
         self.assertTrue(any(f["type"] == "aws_access_key" for f in findings))
 
     def test_jwt_detected(self):
-        jwt = "REDACTEDJWT"
+        jwt = "eyJhbGciOiJIUzI1NiJ9" + ".eyJzdWIiOiIxMjM0NTY3ODkwIn0" + ".dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"
         scanner = mod.DockerSecretScanner()
         findings = scanner.scan_text(jwt, source="test")
         self.assertTrue(any(f["type"] == "jwt_token" for f in findings))
 
     def test_github_token_detected(self):
         scanner = mod.DockerSecretScanner()
-        findings = scanner.scan_text("GHREDACTEDPATTOKEN", source="test")
+        findings = scanner.scan_text("ghp_" + "AbCdEfGhIjKlMnOpQrStUvWxYz1234567890", source="test")
         self.assertTrue(any(f["type"] == "github_token" for f in findings))
 
     def test_no_false_positive_on_clean_text(self):
